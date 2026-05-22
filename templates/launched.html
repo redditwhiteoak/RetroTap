@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ game.get("title", "Game") }} - Running</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #050505;
+            color: white;
+            font-family: "Segoe UI", Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .background-image {
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.25),
+                    rgba(5, 5, 5, 0.98)
+                ),
+                url("{{ game.get('screenshot') or game.get('box_art') or game.get('image') }}");
+            background-size: contain;
+            background-position: center;
+            filter: blur(8px) scale(1.08);
+            z-index: 0;
+        }
+
+        .layout {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-end;
+            padding: 5%;
+        }
+
+        .content {
+            width: 100%;
+            max-width: 950px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 28px;
+            padding: 32px;
+            border-radius: 28px;
+            background: rgba(20, 20, 25, 0.82);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+        }
+
+        .box-art {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            border-radius: 18px;
+            background-color: rgba(17,24,39,0.9);
+            background-size: contain;
+            background-position: center;
+            box-shadow: 0 16px 36px rgba(0,0,0,0.45);
+        }
+
+        .status-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            color: #00ff88;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .closed-line {
+            color: #facc15;
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 15px #00ff88;
+        }
+
+        .closed-dot {
+            background: #facc15;
+            box-shadow: 0 0 15px #facc15;
+        }
+
+        h1 {
+            margin: 0 0 12px 0;
+            font-size: clamp(2.2rem, 6vw, 4rem);
+            font-weight: 900;
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+        }
+
+        .system {
+            display: inline-block;
+            margin-bottom: 18px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(58,134,255,0.15);
+            color: #7ab6ff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p {
+            color: rgba(255,255,255,0.82);
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .meta-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.82);
+            font-size: 0.92rem;
+        }
+
+        .meta-item strong {
+            display: block;
+            color: white;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                padding: 20px;
+                padding-bottom: 60px;
+                align-items: flex-end;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+                padding: 24px;
+            }
+
+            .box-art {
+                max-width: 190px;
+                margin: auto;
+            }
+
+            h1 {
+                font-size: 2.25rem;
+                text-align: center;
+            }
+
+            .system {
+                display: block;
+                width: fit-content;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .status-line {
+                justify-content: center;
+            }
+
+            .metadata {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn-primary,
+            .btn-secondary,
+            .button {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body class="has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <div class="background-image"></div>
+
+    {% if game.get("music") %}
+    <audio id="gameMusic" loop>
+        <source src="{{ game.get('music') }}">
+    </audio>
+    {% endif %}
+
+    <div class="layout">
+
+        <div class="content">
+
+            <div
+                class="box-art"
+                style="background-image: url('{{ game.get('box_art') or game.get('image') }}');"
+            ></div>
+
+            <div class="details">
+
+                {% if closed %}
+                <div class="status-line closed-line">
+                    <div class="pulse closed-dot"></div>
+                    Closed
+                </div>
+
+                {% else %}
+                <div class="status-line">
+                    <div class="pulse"></div>
+                    Running
+                </div>
+                {% endif %}
+
+                <h1>{{ game.get("title", "Game") }}</h1>
+
+                <div class="system">
+                    {{ game.get("system", "Unknown System") }}
+                </div>
+
+                {% if closed %}
+                <p>
+                    The emulator close command was sent.
+                    You can relaunch the game or return to the platform page.
+                </p>
+
+                {% elif game.get("phone_launched") %}
+                <p>
+                    MacroDroid callback confirmed the phone launch.
+                    Returning to the library will not close the game on your phone.
+                </p>
+                {% else %}
+                <p>
+                    Your game has been launched on the PC.
+                    Returning to the library will not close the game.
+                </p>
+                {% endif %}
+
+                <div class="metadata">
+
+                    {% if game.get("genre") %}
+                    <div class="meta-item">
+                        <strong>Genre</strong>
+                        {{ game.get("genre") }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("developer") %}
+                    <div class="meta-item">
+                        <strong>Developer</strong>
+                        {{ game.get("developer") }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("publisher") %}
+                    <div class="meta-item">
+                        <strong>Publisher</strong>
+                        {{ game.get("publisher") }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("release_date") %}
+                    <div class="meta-item">
+                        <strong>Release Date</strong>
+                        {{ game.get("release_date")[:10] }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("star_rating") %}
+                    <div class="meta-item">
+                        <strong>Rating</strong>
+                        {{ game.get("star_rating")|rating_2dp }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("play_count") %}
+                    <div class="meta-item">
+                        <strong>Play Count</strong>
+                        {{ game.get("play_count") }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("emulator") %}
+                    <div class="meta-item">
+                        <strong>Emulator</strong>
+                        {{ game.get("emulator") }}
+                    </div>
+                    {% endif %}
+
+                    {% if game.get("region") %}
+                    <div class="meta-item">
+                        <strong>Region</strong>
+                        {{ game.get("region") }}
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <div class="actions">
+
+                    <a
+                        href="{{ url_for('toggle_favorite_route', game_id=game_id) }}?return={{ url_for('game_choice', game_id=game_id) }}{% if region_query %}%3F{{ region_query|urlencode }}{% endif %}"
+                        class="btn-secondary favorite-button"
+                    >
+                        {% if game.get("is_favorite") %}
+                        ★ Remove Favorite
+                        {% else %}
+                        ☆ Add Favorite
+                        {% endif %}
+                    </a>
+
+                    <a href="/{% if region_query %}?{{ region_query }}{% endif %}" class="btn-primary">
+                        Back to Library
+                    </a>
+
+                    <a href="/platform/{{ game.get('system') }}{% if region_query %}?{{ region_query }}{% endif %}" class="btn-secondary">
+                        Return to Platform
+                    </a>
+
+                    {% if game.get("phone_launched") %}
+
+                    <a href="{{ macrodroid_url or url_for('phone_game_page', game_id=game_id) }}" class="btn-secondary">
+                        Relaunch on Phone
+                    </a>
+
+                    <a href="{{ url_for('play', game_id=game_id) }}{% if region_query %}?{{ region_query }}{% endif %}" class="btn-secondary">
+                        Play on PC
+                    </a>
+
+                    {% else %}
+
+                    <a href="{{ url_for('play', game_id=game_id) }}{% if region_query %}?{{ region_query }}{% endif %}" class="btn-secondary">
+                        Retry PC Launch
+                    </a>
+
+                    {% if phone_available and is_mobile %}
+                    <a href="{{ macrodroid_url or url_for('phone_game_page', game_id=game_id) }}" class="btn-secondary">
+                        Play on Phone
+                    </a>
+                    {% endif %}
+
+                    <a href="/close-game/{{ game_id }}{% if region_query %}?{{ region_query }}{% endif %}" class="btn-secondary danger">
+                        Close Game
+                    </a>
+
+                    {% endif %}
+
+                    {% if rom_downloads_enabled|default(false) %}
+                    <a href="{{ url_for('download_rom', game_id=game_id) }}" class="btn-secondary">
+                        Download ROM
+                    </a>
+                    {% endif %}
+
+                    {% if game.get("music") %}
+                    <a
+                        href="#"
+                        class="btn-secondary"
+                        onclick="toggleMusic(); return false;"
+                    >
+                        Toggle Music
+                    </a>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% if game.get("music") %}
+    <script>
+        const music = document.getElementById("gameMusic");
+
+        function toggleMusic() {
+            if (!music) {
+                return;
+            }
+
+            if (music.paused) {
+                music.play();
+            } else {
+                music.pause();
+            }
+        }
+    </script>
+    {% endif %}
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# Runtime config and generated data
+config.json
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+cache/
+*_cache.json
+favorites.json
+recent_plays.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build/package output
+build/
+dist/
+*.spec
+*.zip

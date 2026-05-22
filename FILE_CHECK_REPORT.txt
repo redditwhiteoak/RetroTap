@@ -1,0 +1,30 @@
+Public/shareable version
+
+Added:
+- user_settings.py with easy-to-edit defaults.
+- README_PUBLIC_SHARE_VERSION.md.
+- /setup-help page.
+- Server port reads from user_settings.PORT.
+- app_config.py defaults read from user_settings.py.
+
+Python compile check:
+- app_config.py: OK
+- app_logging.py: OK
+- cache_db.py: OK
+- launchbox_library.py: OK
+- launchbox_server.py: OK
+- server_helpers.py: OK
+- user_settings.py: OK
+
+Template reference check:
+- error.html: OK
+- favorites.html: OK
+- game_list.html: OK
+- genres.html: OK
+- launched.html: OK
+- phone_play.html: OK
+- platform_games.html: OK
+- platforms.html: OK
+- play_choice.html: OK
+- settings.html: OK
+- setup_help.html: OK

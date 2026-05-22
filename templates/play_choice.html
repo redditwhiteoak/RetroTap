@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ game.get("title", "Game") }} - Choose Play Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #050505;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        .background-image {
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.25),
+                    rgba(5, 5, 5, 0.98)
+                ),
+                url("{{ game.get('screenshot') or game.get('box_art') or game.get('image') }}");
+            background-size: cover;
+            background-position: center;
+            filter: blur(8px) scale(1.08);
+            z-index: 0;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 980px;
+            position: relative;
+            z-index: 1;
+            margin: auto;
+            background: rgba(20, 20, 25, 0.84);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+            backdrop-filter: blur(12px);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 210px 1fr;
+            gap: 24px;
+            align-items: start;
+            margin-bottom: 24px;
+        }
+
+        .box-art {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            border-radius: 18px;
+            background-color: rgba(17,24,39,0.9);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            box-shadow: 0 16px 36px rgba(0,0,0,0.45);
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            line-height: 1;
+        }
+
+        .system {
+            color: #93c5fd;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .notice {
+            color: rgba(255,255,255,0.82);
+            line-height: 1.55;
+            margin-bottom: 18px;
+        }
+
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .meta-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.07);
+        }
+
+        .meta-item strong {
+            display: block;
+            font-size: .78rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .notes {
+            margin-top: 18px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.07);
+            line-height: 1.55;
+            color: rgba(255,255,255,.84);
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .button {
+            display: block;
+            text-align: center;
+            padding: 16px 18px;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: bold;
+            background: white;
+            color: black;
+        }
+
+        .secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+
+        @media (max-width: 700px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+
+            .box-art {
+                max-width: 190px;
+                margin: auto;
+            }
+
+            h1,
+            .system,
+            .notice {
+                text-align: center;
+            }
+
+            .actions,
+            .metadata {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <div class="background-image"></div>
+
+    {% if game.get("music") %}
+    <audio id="gameMusic" loop>
+        <source src="{{ game.get('music') }}">
+    </audio>
+    {% endif %}
+
+    <div class="card">
+
+        <div class="hero">
+
+            <div
+                class="box-art"
+                style="background-image: url('{{ game.get('box_art') or game.get('image') }}');"
+            ></div>
+
+            <div>
+                <h1>{{ game.get("title", "Game") }}</h1>
+
+                <div class="system">
+                    {{ game.get("system", "Unknown System") }}
+                    {% if game.get("emulator") %}
+                    · {{ game.get("emulator") }}
+                    {% endif %}
+                </div>
+
+                {% if is_mobile and phone_available %}
+                <div class="notice">
+                    Ready to launch on PC or phone.
+                </div>
+                {% elif is_mobile and not phone_available %}
+                <div class="notice">
+                    Ready to launch on PC. Phone play is not available for this game because it is not detected as a RetroArch game.
+                </div>
+                {% else %}
+                <div class="notice">
+                    Ready to launch on PC.
+                </div>
+                {% endif %}
+
+                <div class="metadata">
+
+                    {% if game.get("genre") %}
+                    <div class="meta-item"><strong>Genre</strong>{{ game.get("genre") }}</div>
+                    {% endif %}
+
+                    {% if game.get("developer") %}
+                    <div class="meta-item"><strong>Developer</strong>{{ game.get("developer") }}</div>
+                    {% endif %}
+
+                    {% if game.get("publisher") %}
+                    <div class="meta-item"><strong>Publisher</strong>{{ game.get("publisher") }}</div>
+                    {% endif %}
+
+                    {% if game.get("release_date") %}
+                    <div class="meta-item"><strong>Release Date</strong>{{ game.get("release_date")[:10] }}</div>
+                    {% endif %}
+
+                    {% if game.get("region") %}
+                    <div class="meta-item"><strong>Region</strong>{{ game.get("region") }}</div>
+                    {% endif %}
+
+                    {% if game.get("series") %}
+                    <div class="meta-item"><strong>Series</strong>{{ game.get("series") }}</div>
+                    {% endif %}
+
+                    {% if game.get("play_mode") %}
+                    <div class="meta-item"><strong>Play Mode</strong>{{ game.get("play_mode") }}</div>
+                    {% endif %}
+
+                    {% if game.get("max_players") %}
+                    <div class="meta-item"><strong>Max Players</strong>{{ game.get("max_players") }}</div>
+                    {% endif %}
+
+                    {% if game.get("star_rating") or game.get("community_star_rating") %}
+                    <div class="meta-item"><strong>Rating</strong>{{ (game.get("star_rating") or game.get("community_star_rating"))|rating_2dp }}</div>
+                    {% endif %}
+
+                    {% if game.get("play_count") %}
+                    <div class="meta-item"><strong>Play Count</strong>{{ game.get("play_count") }}</div>
+                    {% endif %}
+
+                </div>
+
+                {% if game.get("notes") %}
+                <div class="notes">
+                    <strong>Description</strong><br>
+                    {{ game.get("notes") }}
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <div class="actions">
+
+            <a
+                href="{{ url_for('toggle_favorite_route', game_id=game_id) }}?return={{ url_for('game_choice', game_id=game_id) }}{% if region_query %}%3F{{ region_query|urlencode }}{% endif %}"
+                class="button secondary favorite-button"
+            >
+                {% if game.get("is_favorite") %}
+                ★ Remove Favorite
+                {% else %}
+                ☆ Add Favorite
+                {% endif %}
+            </a>
+
+            <a href="{{ url_for('play', game_id=game_id) }}{% if region_query %}?{{ region_query }}{% endif %}" class="button">
+                Launch on PC
+            </a>
+
+            {% if phone_available and is_mobile %}
+            <a
+                href="{{ macrodroid_url or url_for('phone_game_page', game_id=game_id) }}"
+                class="button secondary"
+            >
+                Play on Phone
+            </a>
+            {% endif %}
+
+            {% if rom_downloads_enabled %}
+            <a
+                href="{{ url_for('download_rom', game_id=game_id) }}"
+                class="button secondary"
+            >
+                Download ROM
+            </a>
+            {% endif %}
+
+            <a href="/platform/{{ game.get('system') }}{% if region_query %}?{{ region_query }}{% endif %}" class="button secondary">
+                Back to Platform
+            </a>
+
+            {% if game.get("music") %}
+            <a
+                href="#"
+                class="button secondary"
+                onclick="toggleMusic(); return false;"
+            >
+                Toggle Music
+            </a>
+            {% endif %}
+
+            <a href="/{% if region_query %}?{{ region_query }}{% endif %}" class="button secondary">
+                Back to Library
+            </a>
+
+        </div>
+
+    </div>
+
+    {% if game.get("music") %}
+    <script>
+        const music = document.getElementById("gameMusic");
+
+        function toggleMusic() {
+            if (!music) {
+                return;
+            }
+
+            if (music.paused) {
+                music.play();
+            } else {
+                music.pause();
+            }
+        }
+    </script>
+    {% endif %}
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

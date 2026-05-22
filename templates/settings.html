@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LaunchBox Server Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+</head>
+
+<body class="page has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <header class="page-header">
+        <a class="back-link" href="/">← Back to Library</a>
+
+        <h1 class="page-title">Settings</h1>
+
+        <div class="subtitle">
+            Configure your NFC Game Launcher server. Default values are in user_settings.py.
+        </div>
+    </header>
+
+    <div class="simple-card" style="margin: 0 auto;">
+
+        {% if message %}
+        <p class="good">{{ message }}</p>
+        {% endif %}
+
+        <form method="POST" action="/settings">
+
+            <label for="launchbox_folder">
+                <strong>LaunchBox Folder</strong>
+            </label>
+
+            <p class="subtitle">
+                This should point to your LaunchBox install, not the Python script folder.
+            </p>
+
+            <input
+                id="launchbox_folder"
+                name="launchbox_folder"
+                class="search-box"
+                style="margin: 12px 0 16px 0;"
+                type="text"
+                value="{{ launchbox_folder }}"
+                placeholder="D:\LaunchBox"
+            >
+
+            {% if folder_valid %}
+            <p class="good">
+                Folder looks valid.
+            </p>
+            {% else %}
+            <p style="color:#facc15;">
+                Folder does not look valid. Expected Data, Data\Platforms, and Data\Emulators.xml.
+            </p>
+            {% endif %}
+
+            <label style="display:block; margin:18px 0;">
+                <input
+                    type="checkbox"
+                    name="auto_launch"
+                    {% if auto_launch %}checked{% endif %}
+                >
+                <strong>Auto Launch</strong>
+                <span class="subtitle">
+                    Open /game links directly into PC launch mode.
+                </span>
+            </label>
+
+            <p>
+                <strong>ROM Downloads:</strong>
+                {% if rom_downloads_enabled %}
+                Enabled
+                {% else %}
+                Disabled
+                {% endif %}
+            </p>
+
+            <p class="subtitle">
+                Change this in config.json using rom_downloads_enabled.
+            </p>
+
+            <hr>
+
+            <h2>Phone Play / MacroDroid</h2>
+
+            <p>
+                <strong>Phone Play:</strong>
+                {% if phone_play_enabled %}
+                Enabled for RetroArch games
+                {% else %}
+                Disabled
+                {% endif %}
+            </p>
+
+            <label for="macrodroid_trigger_url">
+                <strong>MacroDroid Trigger URL</strong>
+            </label>
+
+            <p class="subtitle">
+                Example: http://192.168.1.50:8080/retroarch
+            </p>
+
+            <input
+                id="macrodroid_trigger_url"
+                name="macrodroid_trigger_url"
+                class="search-box"
+                style="margin: 12px 0 16px 0;"
+                type="text"
+                value="{{ macrodroid_trigger_url }}"
+                placeholder="http://PHONE_IP:PORT/retroarch"
+            >
+
+            <label for="android_rom_folder">
+                <strong>Android ROM Folder</strong>
+            </label>
+
+            <input
+                id="android_rom_folder"
+                name="android_rom_folder"
+                class="search-box"
+                style="margin: 12px 0 16px 0;"
+                type="text"
+                value="{{ android_rom_folder }}"
+            >
+
+            <label for="android_retroarch_core_folder">
+                <strong>Android RetroArch Core Folder</strong>
+            </label>
+
+            <input
+                id="android_retroarch_core_folder"
+                name="android_retroarch_core_folder"
+                class="search-box"
+                style="margin: 12px 0 16px 0;"
+                type="text"
+                value="{{ android_retroarch_core_folder }}"
+                placeholder="data/user/0/com.retroarch/cores"
+            >
+
+            <label for="android_retroarch_config">
+                <strong>Android RetroArch Config File</strong>
+            </label>
+
+            <input
+                id="android_retroarch_config"
+                name="android_retroarch_config"
+                class="search-box"
+                style="margin: 12px 0 16px 0;"
+                type="text"
+                value="{{ android_retroarch_config }}"
+            >
+
+
+            <hr>
+
+            <h2>Debug Logging</h2>
+
+            <label style="display:block; margin:18px 0;">
+                <input
+                    type="checkbox"
+                    name="logging_enabled"
+                    {% if logging_enabled %}checked{% endif %}
+                >
+                <strong>Enable Debug File Logging</strong>
+                <span class="subtitle">
+                    Saves detailed platform/game/launch logs to retrotap_debug.log.
+                </span>
+            </label>
+
+            <p class="subtitle">
+                Log file: {{ log_file }}
+            </p>
+
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin: 12px 0 18px 0;">
+                <a class="btn-secondary" href="/toggle-logging?next=/settings">
+                    {% if logging_enabled %}Disable{% else %}Enable{% endif %} Debug Logging
+                </a>
+                <a class="btn-secondary" href="/debug-log">View Debug Log</a>
+            </div>
+            <button class="btn-primary" type="submit">
+                Save Changes
+            </button>
+
+        </form>
+
+        <hr>
+
+        <h2 style="margin-top: 24px;">Library Refresh</h2>
+
+        <p>
+            <strong>Status:</strong> {{ library_status.message }}<br>
+            <strong>Games Loaded:</strong> {{ library_status.game_count }}<br>
+            <strong>Progress:</strong> {{ library_status.processed_count }}/{{ library_status.total_count }}
+        </p>
+
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;">
+            {% if library_status.loading %}
+            <a class="btn-secondary" href="/pause-library-refresh">Pause Refresh</a>
+            {% elif library_status.paused %}
+            <a class="btn-primary" href="/restart-library-refresh">Resume Refresh</a>
+            {% else %}
+            <a class="btn-secondary" href="/refresh-library">Refresh Library</a>
+            {% endif %}
+
+            <a class="btn-secondary" href="/refresh-library">Start Fresh Scan</a>
+
+            <a
+                class="btn-secondary"
+                href="/clear-library-cache?next=/settings"
+                onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');"
+            >
+                Clear Cache
+            </a>
+
+            <a class="btn-secondary" href="/status">Refresh Status Page</a>
+        </div>
+
+    </div>
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

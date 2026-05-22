@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ platform_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+
+    <style>
+        .platform-info-panel {
+            max-width: 1100px;
+            margin: 0 auto 24px auto;
+            background: rgba(15, 23, 42, 0.78);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 18px;
+        }
+
+        .platform-info-content {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-top: 16px;
+        }
+
+        .platform-info-image {
+            min-height: 120px;
+            border-radius: 18px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .platform-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0,1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .platform-meta-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.07);
+        }
+
+        .platform-meta-item strong {
+            display: block;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .platform-description {
+            color: rgba(255,255,255,.82);
+            line-height: 1.55;
+        }
+
+        .platform-info-hidden {
+            display: none;
+        }
+
+        @media (max-width: 700px) {
+            .platform-info-content {
+                grid-template-columns: 1fr;
+            }
+
+            .platform-meta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .platform-info-image {
+                min-height: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body class="page has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <header class="page-header">
+        <a
+            class="back-link"
+            href="/{% if region_query %}?{{ region_query }}{% endif %}"
+        >
+            ← Back to Platforms
+        </a>
+
+        <h1 class="page-title">{{ platform_name }}</h1>
+
+        <div class="subtitle">
+            Showing {{ games|length }} of {{ all_game_count }} games
+        </div>
+
+        <a
+            class="favorite-link"
+            href="/favorites{% if region_query %}?{{ region_query }}{% endif %}"
+        >
+            ★ View Favorites
+        </a>
+    </header>
+
+    <div class="platform-info-panel">
+        <button
+            class="btn-secondary"
+            type="button"
+            onclick="togglePlatformInfo()"
+        >
+            Show/Hide System Info
+        </button>
+
+        <div id="platformInfoContent" class="platform-info-content platform-info-hidden">
+
+            <div
+                class="platform-info-image"
+                {% if platform_info.icon %}
+                style="background-image: url('{{ platform_info.icon }}');"
+                {% endif %}
+            ></div>
+
+            <div>
+                <div class="platform-meta-grid">
+                    {% if platform_info.manufacturer %}
+                    <div class="platform-meta-item">
+                        <strong>Manufacturer</strong>
+                        {{ platform_info.manufacturer }}
+                    </div>
+                    {% endif %}
+
+                    {% if platform_info.developer %}
+                    <div class="platform-meta-item">
+                        <strong>Developer</strong>
+                        {{ platform_info.developer }}
+                    </div>
+                    {% endif %}
+
+                    {% if platform_info.release_date %}
+                    <div class="platform-meta-item">
+                        <strong>Release Date</strong>
+                        {{ platform_info.release_date[:10] }}
+                    </div>
+                    {% endif %}
+
+                    <div class="platform-meta-item">
+                        <strong>Games Shown</strong>
+                        {{ games|length }}
+                    </div>
+                </div>
+
+                {% if platform_info.notes %}
+                <div class="platform-description">
+                    {{ platform_info.notes }}
+                </div>
+                {% else %}
+                <div class="platform-description">
+                    No platform description found in LaunchBox metadata.
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <input
+        id="gameSearch"
+        class="search-box"
+        type="text"
+        placeholder="Search {{ platform_name }} games..."
+        oninput="filterGames()"
+    >
+
+    <div class="filter-bar region-toggle-bar">
+        <button
+            class="btn-secondary region-toggle-button"
+            type="button"
+            onclick="toggleRegionPanel()"
+        >
+            Show/Hide Region Filters
+        </button>
+
+        {% if selected_regions %}
+        <span class="active-region-summary">
+            Active: {{ selected_regions|join(", ") }}
+        </span>
+        {% endif %}
+    </div>
+
+    <div id="regionPanel" class="filter-bar region-panel region-panel-hidden">
+        <div class="region-header">
+            <strong>Regions</strong>
+
+            <input
+                id="regionSearch"
+                class="region-search"
+                type="text"
+                placeholder="Search regions..."
+                oninput="filterRegionCheckboxes()"
+            >
+        </div>
+
+        <div id="regionCheckboxes" class="region-checkboxes">
+            {% for region in available_regions %}
+            <label class="region-option">
+                <input
+                    type="checkbox"
+                    value="{{ region }}"
+                    {% if region in selected_regions %}checked{% endif %}
+                >
+                <span>{{ region }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="region-buttons">
+            <button class="btn-secondary" type="button" onclick="applyRegionFilter()">
+                Apply Region Filter
+            </button>
+
+            <a class="btn-secondary" href="/platform/{{ platform_name }}">
+                Clear Regions
+            </a>
+        </div>
+    </div>
+
+    {% if games|length == 0 %}
+    <div class="empty-state">
+        No games match this filter for {{ platform_name }}.
+    </div>
+    {% endif %}
+
+    <div class="list-window-controls">
+        <span id="visibleCount">Showing initial games...</span>
+        <button id="loadMoreGames" class="btn-secondary" type="button" onclick="loadMoreGames()">Load More Games</button>
+    </div>
+
+    <div class="game-grid">
+
+        {% for game_id, game in games %}
+
+        <a
+            class="game-card"
+            href="/game/{{ game_id }}{% if region_query %}?{{ region_query }}{% endif %}"
+            data-title="{{ game.title|lower }}"
+            data-index="{{ loop.index0 }}"
+        >
+
+            <div
+                class="game-art lazy-bg"
+                {% if game.image %}
+                data-bg="{{ game.image }}"
+                {% endif %}
+            ></div>
+
+            <div class="game-info">
+
+                <div class="game-title">
+                    {{ game.title }}
+                </div>
+
+                {% if game.is_favorite %}
+                <div class="favorite-badge">
+                    ★ Favorite
+                </div>
+                {% endif %}
+
+                {% if game.phone_play_available %}
+                <div class="phone-badge">
+                    Phone Play Available
+                </div>
+                {% endif %}
+
+                {% if game.region %}
+                <div class="subtitle">
+                    {{ game.region }}
+                </div>
+                {% endif %}
+
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+    <script>
+        let visibleLimit = 160;
+        const visibleStep = 160;
+
+        function matchingGameCards() {
+            const search = document
+                .getElementById("gameSearch")
+                .value
+                .toLowerCase()
+                .trim();
+
+            return Array.from(document.querySelectorAll(".game-card")).filter(card => {
+                const title = card.dataset.title || "";
+                return !search || title.includes(search);
+            });
+        }
+
+        function filterGames() {
+            visibleLimit = 160;
+            applyGameWindow();
+        }
+
+        function loadMoreGames() {
+            visibleLimit += visibleStep;
+            applyGameWindow();
+        }
+
+        function applyGameWindow() {
+            const cards = Array.from(document.querySelectorAll(".game-card"));
+            const matching = matchingGameCards();
+            const visible = new Set(matching.slice(0, visibleLimit));
+
+            cards.forEach(card => {
+                card.style.display = visible.has(card) ? "flex" : "none";
+            });
+
+            const count = document.getElementById("visibleCount");
+            if (count) {
+                count.textContent = `Showing ${Math.min(visibleLimit, matching.length)} of ${matching.length} matching games`;
+            }
+
+            const more = document.getElementById("loadMoreGames");
+            if (more) {
+                more.style.display = visibleLimit < matching.length ? "inline-block" : "none";
+            }
+
+            if (typeof initLazyArtwork === "function") {
+                initLazyArtwork();
+            }
+        }
+
+        function selectedRegionQuery() {
+            const checkboxes = document.querySelectorAll(
+                "#regionCheckboxes input[type='checkbox']:checked"
+            );
+
+            const params = new URLSearchParams();
+
+            checkboxes.forEach(box => {
+                params.append("region", box.value);
+            });
+
+            return params.toString();
+        }
+
+        function applyRegionFilter() {
+            const query = selectedRegionQuery();
+            const baseUrl = "/platform/{{ platform_name }}";
+
+            if (query) {
+                window.location.href = baseUrl + "?" + query;
+            } else {
+                window.location.href = baseUrl;
+            }
+        }
+
+        function filterRegionCheckboxes() {
+            const search = document
+                .getElementById("regionSearch")
+                .value
+                .toLowerCase()
+                .trim();
+
+            const options = document.querySelectorAll(".region-option");
+
+            options.forEach(option => {
+                const text = option.innerText.toLowerCase();
+
+                if (text.includes(search)) {
+                    option.style.display = "flex";
+                } else {
+                    option.style.display = "none";
+                }
+            });
+        }
+
+        function toggleRegionPanel() {
+            const panel = document.getElementById("regionPanel");
+
+            if (!panel) {
+                return;
+            }
+
+            panel.classList.toggle("region-panel-hidden");
+        }
+
+        function togglePlatformInfo() {
+            const panel = document.getElementById("platformInfoContent");
+
+            if (!panel) {
+                return;
+            }
+
+            panel.classList.toggle("platform-info-hidden");
+        }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            const params = new URLSearchParams(window.location.search);
+            const search = params.get("search");
+
+            if (search) {
+                const input = document.getElementById("gameSearch");
+                input.value = search;
+                filterGames();
+            }
+
+            const hasActiveRegions = {{ "true" if selected_regions else "false" }};
+
+            if (hasActiveRegions) {
+                const panel = document.getElementById("regionPanel");
+
+                if (panel) {
+                    panel.classList.remove("region-panel-hidden");
+                }
+            }
+        });
+    </script>
+
+
+    <script>
+        function initLazyArtwork() {
+            const items = document.querySelectorAll(".lazy-bg[data-bg]");
+
+            if (!("IntersectionObserver" in window)) {
+                items.forEach(el => {
+                    el.style.backgroundImage = `url('${el.dataset.bg}')`;
+                    el.removeAttribute("data-bg");
+                });
+                return;
+            }
+
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    const el = entry.target;
+                    const bg = el.dataset.bg;
+                    if (bg) {
+                        el.style.backgroundImage = `url('${bg}')`;
+                        el.removeAttribute("data-bg");
+                    }
+                    obs.unobserve(el);
+                });
+            }, { rootMargin: "900px 0px", threshold: 0.01 });
+
+            items.forEach(el => observer.observe(el));
+        }
+
+        document.addEventListener("DOMContentLoaded", initLazyArtwork);
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

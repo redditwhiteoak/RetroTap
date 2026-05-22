@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LaunchBox Platforms</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+</head>
+
+<body class="page has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <header class="page-header">
+        <h1 class="page-title">LaunchBox Library</h1>
+        <div class="subtitle">Choose a platform to browse your games.</div>
+
+        {% if selected_regions %}
+        <div class="subtitle">
+            Region filters active:
+            {{ selected_regions|join(", ") }}
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="status-bar">
+        <div>Games Loaded: {{ library_status.game_count }}</div>
+        <div>{{ library_status.message }}</div>
+        <div>Logging: <a href="/toggle-logging?next=/">{{ logging_toggle_label }} ({{ logging_state }})</a> | <a href="/debug-log">View Log</a></div>
+        <div>
+            <a href="/favorites{% if region_query %}?{{ region_query }}{% endif %}">
+                Favorites{% if favorite_count %} ({{ favorite_count }}){% endif %}
+            </a>
+            |
+            <a href="/recent">Recent</a>
+            |
+            <a href="/random">Random Game</a>
+            |
+            <a href="/genres">Genres</a>
+            |
+            <a href="/status">Status</a>
+            |
+            <a href="/settings">Settings</a>
+            |
+            {% if library_status.loading %}
+            <a href="/pause-library-refresh">Pause Refresh</a>
+            {% elif library_status.paused %}
+            <a href="/restart-library-refresh">Resume Refresh</a>
+            {% else %}
+            <a href="/refresh-library">Refresh Library</a>
+            {% endif %}
+            |
+            <a href="/clear-library-cache?next=/" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+        </div>
+    </div>
+
+    <input
+        id="platformSearch"
+        class="search-box"
+        type="text"
+        placeholder="Search platforms or games..."
+        oninput="filterPlatforms()"
+    >
+
+    <div class="filter-bar region-toggle-bar">
+        <button
+            class="btn-secondary region-toggle-button"
+            type="button"
+            onclick="toggleRegionPanel()"
+        >
+            Show/Hide Region Filters
+        </button>
+
+        {% if selected_regions %}
+        <span class="active-region-summary">
+            Active: {{ selected_regions|join(", ") }}
+        </span>
+        {% endif %}
+    </div>
+
+    <div id="regionPanel" class="filter-bar region-panel region-panel-hidden">
+        <div class="region-header">
+            <strong>Regions</strong>
+
+            <input
+                id="regionSearch"
+                class="region-search"
+                type="text"
+                placeholder="Search regions..."
+                oninput="filterRegionCheckboxes()"
+            >
+        </div>
+
+        <div id="regionCheckboxes" class="region-checkboxes">
+            {% for region in available_regions %}
+            <label class="region-option">
+                <input
+                    type="checkbox"
+                    value="{{ region }}"
+                    {% if region in selected_regions %}checked{% endif %}
+                >
+                <span>{{ region }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="region-buttons">
+            <button class="btn-secondary" type="button" onclick="applyRegionFilter()">
+                Apply Region Filter
+            </button>
+
+            <a class="btn-secondary" href="/">
+                Clear Regions
+            </a>
+        </div>
+    </div>
+
+    {% if recent_games %}
+    <header class="page-header">
+        <h2>Recently Played</h2>
+        <p>
+            <a
+                class="btn-secondary danger"
+                href="/clear-recent"
+                onclick="return confirm('Clear recently played list?');"
+            >
+                Clear Recent
+            </a>
+        </p>
+    </header>
+
+    <div class="game-grid">
+        {% for game_id, game in recent_games %}
+        <a class="game-card" href="/game/{{ game_id }}">
+            <div
+                class="game-art"
+                {% if game.image %}
+                style="background-image:url('{{ game.image }}');"
+                {% endif %}
+            ></div>
+
+            <div class="game-info">
+                <div class="game-title">{{ game.title }}</div>
+                <div class="subtitle">{{ game.system }}</div>
+
+                {% if game.phone_play_available %}
+                <div class="phone-badge recent-phone-badge">
+                    Phone Play Available
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid">
+        {% for platform, data in platforms.items() %}
+
+        <a
+            class="platform-card"
+            href="/platform/{{ platform }}{% if region_query %}?{{ region_query }}{% endif %}"
+            onclick="goToPlatform(event, this)"
+            data-name="{{ platform|lower }}"
+            data-games="{{ data.game_titles|lower }}"
+        >
+
+            {% if data.icon %}
+            <img
+                class="platform-icon-img"
+                src="{{ data.icon }}"
+                alt="{{ platform }}"
+                loading="lazy"
+                decoding="async"
+            >
+            {% else %}
+            <div class="platform-icon placeholder">
+                {{ platform[0] }}
+            </div>
+            {% endif %}
+
+            <div class="platform-name">{{ platform }}</div>
+            <div class="game-count">{{ data.game_count }} games</div>
+
+            {% if data.phone_play_available %}
+            <div class="phone-badge" title="Platform Phone Play Available">
+                Phone Play Available
+            </div>
+            {% endif %}
+
+        </a>
+
+        {% endfor %}
+    </div>
+
+    <script>
+        function getSearchText() {
+            return document
+                .getElementById("platformSearch")
+                .value
+                .toLowerCase()
+                .trim();
+        }
+
+        function filterPlatforms() {
+            const search = getSearchText();
+
+            const cards = document.querySelectorAll(".platform-card");
+
+            cards.forEach(card => {
+                const platformName = card.dataset.name || "";
+                const gameTitles = card.dataset.games || "";
+
+                if (
+                    platformName.includes(search) ||
+                    gameTitles.includes(search)
+                ) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function selectedRegionQuery() {
+            const checkboxes = document.querySelectorAll(
+                "#regionCheckboxes input[type='checkbox']:checked"
+            );
+
+            const params = new URLSearchParams();
+
+            checkboxes.forEach(box => {
+                params.append("region", box.value);
+            });
+
+            return params.toString();
+        }
+
+        function applyRegionFilter() {
+            const query = selectedRegionQuery();
+
+            if (query) {
+                window.location.href = "/?" + query;
+            } else {
+                window.location.href = "/";
+            }
+        }
+
+        function filterRegionCheckboxes() {
+            const search = document
+                .getElementById("regionSearch")
+                .value
+                .toLowerCase()
+                .trim();
+
+            const options = document.querySelectorAll(".region-option");
+
+            options.forEach(option => {
+                const text = option.innerText.toLowerCase();
+
+                if (text.includes(search)) {
+                    option.style.display = "flex";
+                } else {
+                    option.style.display = "none";
+                }
+            });
+        }
+
+        function goToPlatform(event, card) {
+            const search = getSearchText();
+
+            if (!search) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const baseUrl = card.getAttribute("href");
+            const joiner = baseUrl.includes("?") ? "&" : "?";
+            const newUrl = baseUrl + joiner + "search=" + encodeURIComponent(search);
+
+            window.location.href = newUrl;
+        }
+    
+        function toggleRegionPanel() {
+            const panel = document.getElementById("regionPanel");
+
+            if (!panel) {
+                return;
+            }
+
+            panel.classList.toggle("region-panel-hidden");
+        }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            const hasActiveRegions = {{ "true" if selected_regions else "false" }};
+
+            if (hasActiveRegions) {
+                const panel = document.getElementById("regionPanel");
+
+                if (panel) {
+                    panel.classList.remove("region-panel-hidden");
+                }
+            }
+        });
+    </script>
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

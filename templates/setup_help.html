@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NFC Game Launcher Setup Help</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+</head>
+
+<body class="page has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <header class="page-header">
+        <a class="back-link" href="/">← Back to Library</a>
+        <h1 class="page-title">Setup Help</h1>
+        <div class="subtitle">
+            Edit user_settings.py first, then use /settings for runtime changes.
+        </div>
+    </header>
+
+    <div class="simple-card" style="margin: 0 auto; max-width: 900px;">
+
+        <h2>Files most users edit</h2>
+
+        <p>
+            <strong>user_settings.py</strong> contains the important defaults:
+        </p>
+
+        <pre style="white-space: pre-wrap;">
+LAUNCHBOX_FOLDER
+PROJECT_FOLDER
+PORT
+MACRODROID_TRIGGER_URL
+ANDROID_ROM_FOLDER
+ANDROID_RETROARCH_CORE_FOLDER
+ANDROID_RETROARCH_CONFIG
+RETROARCH_ANDROID_CORES
+        </pre>
+
+        <h2>MacroDroid variables</h2>
+
+        <p>Whitelist these variables in MacroDroid:</p>
+
+        <pre>core
+rom
+callback</pre>
+
+        <h2>Refresh library</h2>
+
+        <p>
+            After changing paths, open:
+        </p>
+
+        <p>
+            <a class="btn-primary" href="/refresh-library">Refresh Library</a>
+            <a class="btn-secondary" href="/clear-library-cache?next=/setup-help" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+            <a class="btn-secondary" href="/settings">Open Settings</a>
+        </p>
+
+    </div>
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Favorite Games</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico">
+</head>
+
+<body class="page has-retro-banner">
+    <div class="retro-banner">
+        <div class="retro-banner-left">
+            <button class="menu-toggle" type="button" onclick="toggleRetroMenu()">☰ Menu</button>
+            <a href="/" aria-label="RetroTap Home"><img class="retro-banner-logo" src="/static/retrotap_logo.png" alt="RetroTap"></a>
+            
+        </div>
+</div>
+    <nav id="retroSidebar" class="retro-sidebar" aria-label="RetroTap menu">
+        <a href="/">Platforms</a>
+        <a href="/favorites">Favorites</a>
+        <a href="/recent">Recent</a>
+        <a href="/genres">Genres</a>
+        <a href="/random">Random Game</a>
+        <a href="/settings">Settings</a>
+        <a href="/status">Server Status</a>
+        <a href="/toggle-logging">{{ logging_toggle_label }} ({{ logging_state }})</a>
+        <a href="/debug-log">View Debug Log</a>
+        <a href="/refresh-library">Refresh Library</a>
+        <a href="/pause-library-refresh">Pause Refresh</a>
+        <a href="/restart-library-refresh">Resume Refresh</a>
+        <a class="danger-link" href="/clear-library-cache?next=/status" onclick="return confirm('Clear all RetroTap library cache files? You can rebuild them by refreshing the library.');">Clear Cache</a>
+    </nav>
+    <div id="retroMenuBackdrop" class="retro-menu-backdrop" onclick="toggleRetroMenu(false)"></div>
+    <script>
+        function toggleRetroMenu(forceOpen) {
+            const menu = document.getElementById('retroSidebar');
+            const backdrop = document.getElementById('retroMenuBackdrop');
+            if (!menu || !backdrop) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !menu.classList.contains('open');
+            menu.classList.toggle('open', open);
+            backdrop.classList.toggle('open', open);
+        }
+    </script>
+
+
+    <header class="page-header">
+        <a
+            class="back-link"
+            href="/{% if region_query %}?{{ region_query }}{% endif %}"
+        >
+            ← Back to Platforms
+        </a>
+
+        <h1 class="page-title">Favorite Games</h1>
+
+        <div class="subtitle">
+            {{ games|length }} favorite games
+        </div>
+
+        <p>
+            <a
+                class="btn-secondary danger"
+                href="/clear-favorites"
+                onclick="return confirm('Clear all favorites?');"
+            >
+                Clear Favorites
+            </a>
+        </p>
+    </header>
+
+    <div class="filter-bar region-toggle-bar">
+        <button
+            class="btn-secondary region-toggle-button"
+            type="button"
+            onclick="toggleRegionPanel()"
+        >
+            Show/Hide Region Filters
+        </button>
+
+        {% if selected_regions %}
+        <span class="active-region-summary">
+            Active: {{ selected_regions|join(", ") }}
+        </span>
+        {% endif %}
+    </div>
+
+    <div id="regionPanel" class="filter-bar region-panel region-panel-hidden">
+        <div class="region-header">
+            <strong>Regions</strong>
+
+            <input
+                id="regionSearch"
+                class="region-search"
+                type="text"
+                placeholder="Search regions..."
+                oninput="filterRegionCheckboxes()"
+            >
+        </div>
+
+        <div id="regionCheckboxes" class="region-checkboxes">
+            {% for region in available_regions %}
+            <label class="region-option">
+                <input
+                    type="checkbox"
+                    value="{{ region }}"
+                    {% if region in selected_regions %}checked{% endif %}
+                >
+                <span>{{ region }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="region-buttons">
+            <button class="btn-secondary" type="button" onclick="applyRegionFilter()">
+                Apply Region Filter
+            </button>
+
+            <a class="btn-secondary" href="/favorites">
+                Clear Regions
+            </a>
+        </div>
+    </div>
+
+    {% if games|length == 0 %}
+    <div class="empty-state">
+        No favorites match these regions. Add favorites from a game page.
+    </div>
+    {% endif %}
+
+    <div class="game-grid">
+
+        {% for game_id, game in games %}
+
+        <a
+            class="game-card"
+            href="/game/{{ game_id }}{% if region_query %}?{{ region_query }}{% endif %}"
+            data-title="{{ game.title|lower }}"
+        >
+
+            <div
+                class="game-art"
+
+                {% if game.image %}
+                style="
+                    background-image:
+                    url('{{ game.image }}');
+                "
+                {% endif %}
+            ></div>
+
+            <div class="game-info">
+
+                <div class="game-title">
+                    {{ game.title }}
+                </div>
+
+                <div class="favorite-badge">
+                    ★ Favorite
+                </div>
+
+                {% if game.phone_play_available %}
+                <div class="phone-badge">
+                    Phone Play Available
+                </div>
+                {% endif %}
+
+                {% if game.region %}
+                <div class="subtitle">
+                    {{ game.system }} · {{ game.region }}
+                </div>
+                {% else %}
+                <div class="subtitle">
+                    {{ game.system }}
+                </div>
+                {% endif %}
+
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+    <script>
+        function selectedRegionQuery() {
+            const checkboxes = document.querySelectorAll(
+                "#regionCheckboxes input[type='checkbox']:checked"
+            );
+
+            const params = new URLSearchParams();
+
+            checkboxes.forEach(box => {
+                params.append("region", box.value);
+            });
+
+            return params.toString();
+        }
+
+        function applyRegionFilter() {
+            const query = selectedRegionQuery();
+
+            if (query) {
+                window.location.href = "/favorites?" + query;
+            } else {
+                window.location.href = "/favorites";
+            }
+        }
+
+        function filterRegionCheckboxes() {
+            const search = document
+                .getElementById("regionSearch")
+                .value
+                .toLowerCase()
+                .trim();
+
+            const options = document.querySelectorAll(".region-option");
+
+            options.forEach(option => {
+                const text = option.innerText.toLowerCase();
+
+                if (text.includes(search)) {
+                    option.style.display = "flex";
+                } else {
+                    option.style.display = "none";
+                }
+            });
+        }
+    
+        function toggleRegionPanel() {
+            const panel = document.getElementById("regionPanel");
+
+            if (!panel) {
+                return;
+            }
+
+            panel.classList.toggle("region-panel-hidden");
+        }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            const hasActiveRegions = {{ "true" if selected_regions else "false" }};
+
+            if (hasActiveRegions) {
+                const panel = document.getElementById("regionPanel");
+
+                if (panel) {
+                    panel.classList.remove("region-panel-hidden");
+                }
+            }
+        });
+    </script>
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
